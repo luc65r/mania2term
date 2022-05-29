@@ -1,9 +1,13 @@
 #include <stdio.h>
 
-#define C2H(C) ({                                               \
-            int _C = (C);                                       \
-            '0' <= _C && _C <= '9' ? _C - '0' : 0xa + _C - 'a'; \
-        })
+static int hex_char(int c) {
+    if ('0' <= c && c <= '9')
+        return c - '0';
+    else if ('A' <= c && c <= 'F')
+        return 0xa + c - 'A';
+    else
+        return 0xa + c - 'a';
+}
 
 static int interpret_sequence(void) {
     /* See https://wiki.xaseco.org/wiki/Text_formatting */
@@ -12,11 +16,12 @@ static int interpret_sequence(void) {
     switch (c) {
     /* Color */
     case '0' ... '9':
+    case 'A' ... 'F':
     case 'a' ... 'f':
         {
             /* TODO: check if they are garented to evaluate in this order */
-            int r = C2H(c), g = C2H(getchar()), b = C2H(getchar());
-            printf("\e[38;2;%d;%d;%dm", r * 16, g * 16, b * 16);
+            int r = hex_char(c), g = hex_char(getchar()), b = hex_char(getchar());
+            printf("\e[38;2;%d;%d;%dm", r * 0xf, g * 0xf, b * 0xf);
         }
         break;
 
