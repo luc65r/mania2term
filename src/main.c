@@ -37,6 +37,8 @@ static int interpret_sequence(void) {
 
     /* Shadowed */
     case 's':
+    /* Bold */
+    case 'o':
         /* Bold */
         printf("\e[1m");
         break;
