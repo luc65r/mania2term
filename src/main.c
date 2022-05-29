@@ -14,8 +14,11 @@ static char args_doc[] = "[FILE]";
 
 static struct argp_option options[] = {
     { "nl-reset", 'n', 0, 0, "reset style at each new line" },
+    { "verbose", 'v', 0, 0, "don't ignore unknown sequences" },
     { 0 }
 };
+
+static bool verbose;
 
 struct args {
     char *file;
@@ -27,6 +30,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
     case 'n':
         args->nl_reset = true;
+        break;
+    case 'v':
+        verbose = true;
         break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= 1)
@@ -42,12 +48,17 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
 static int hex_char(int c) {
-    if ('0' <= c && c <= '9')
+    if ('0' <= c && c <= '9') {
         return c - '0';
-    else if ('A' <= c && c <= 'F')
+    } else if ('A' <= c && c <= 'F') {
         return 0xa + c - 'A';
-    else
+    } else if ('a' <= c && c <= 'f') {
         return 0xa + c - 'a';
+    } else {
+        if (verbose)
+            warnx("%c is not a valid hexadecimal character", c);
+        return 0;
+    }
 }
 
 static int interpret_sequence(FILE *in_file) {
@@ -92,13 +103,16 @@ static int interpret_sequence(FILE *in_file) {
     case '$':
         putchar('$');
         break;
+
+    default:
+        if (verbose)
+            warnx("unknown sequence: $%c", c);
     }
 }
 
 int main(int argc, char **argv) {
     struct args args = {
         .file = "-",
-        .nl_reset = false,
     };
 
     argp_parse(&argp, argc, argv, 0, 0, &args);
@@ -120,6 +134,7 @@ int main(int argc, char **argv) {
         switch (c) {
         case EOF:
             goto out;
+
         case '$':
             interpret_sequence(in_file);
             break;
@@ -130,6 +145,7 @@ int main(int argc, char **argv) {
             else
                 putchar('\n');
             break;
+
         default:
             putchar(c);
         }
