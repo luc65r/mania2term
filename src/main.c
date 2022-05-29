@@ -13,11 +13,13 @@ static char doc[] = PACKAGE_NAME " -- TrackMania/ManiaPlanet text formatting to 
 static char args_doc[] = "[FILE]";
 
 static struct argp_option options[] = {
+    { "nl-reset", 'n', 0, 0, "reset style at each new line" },
     { 0 }
 };
 
 struct args {
     char *file;
+    bool nl_reset;
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
@@ -96,6 +98,7 @@ static int interpret_sequence(FILE *in_file) {
 int main(int argc, char **argv) {
     struct args args = {
         .file = "-",
+        .nl_reset = false,
     };
 
     argp_parse(&argp, argc, argv, 0, 0, &args);
@@ -121,9 +124,11 @@ int main(int argc, char **argv) {
             interpret_sequence(in_file);
             break;
 
-        /* TODO: make this a command line argument */
         case '\n':
-            printf("\e[m\n");
+            if (args.nl_reset)
+                printf("\e[m\n");
+            else
+                putchar('\n');
             break;
         default:
             putchar(c);
